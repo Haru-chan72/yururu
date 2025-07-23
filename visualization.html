@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>絵文字リアクション積み重ね</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* スクロールバーを非表示にする */
+            background-color: #f0f0f0; /* 背景色 */
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        canvas {
+            border: 1px solid #ccc; /* キャンバスの境界線 */
+            background-color: #fff; /* キャンバスの背景 */
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">絵文字読み込み中...</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+    <script>
+        // ★★★ ここにJavaScriptコードを記述します ★★★
+        // 以下のコードは、このHTMLファイルの<body>タグ内にある<script>タグ内に直接記述してください。
+        // もしくは、別のJSファイル (例: visualization.js) に記述し、ここに読み込むように設定してください。
+        // <script src="visualization.js"></script>
+        // この場合は、visualization.js をGitHubリポジトリにアップロードする必要があります。
+        // 今回はシンプルにHTML内に直接書く形で進めます。
+
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyPUFN0slw8c8N99Bk1N_HKYeEwDsWa9ZK_NGx7548934QJxo8uZ-hIg9UuJjtNiMx03g/exec'; // ★★★ ここに先ほど取得したApps Script APIのURLを貼り付けます ★★★
+        const ENGINE_HEIGHT = 600; // キャンバスの高さ
+        const ENGINE_WIDTH = 800; // キャンバスの幅
+
+        // Matter.js の初期化
+        var Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            Bodies = Matter.Bodies,
+            Composite = Matter.Composite,
+            Events = Matter.Events;
+
+        // エンジンを作成
+        var engine = Engine.create();
+        engine.world.gravity.y = 1; // 重力を設定 (デフォルトは1、強めにするなら2など)
+
+        // レンダラーを作成
+        var render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: ENGINE_WIDTH,
+                height: ENGINE_HEIGHT,
+                wireframes: false, // ワイヤーフレーム表示をオフにして、色付きで表示
+                background: '#fff' // キャンバスの背景色
+            }
+        });
+
+        Render.run(render);
+
+        // ランナーを作成
+        var runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // 地面と壁を作成
+        var ground = Bodies.rectangle(ENGINE_WIDTH / 2, ENGINE_HEIGHT - 25, ENGINE_WIDTH, 50, { isStatic: true, render: { fillStyle: '#666' } });
+        var leftWall = Bodies.rectangle(25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
+        var rightWall = Bodies.rectangle(ENGINE_WIDTH - 25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
+
+        Composite.add(engine.world, [ground, leftWall, rightWall]);
+
+        // 絵文字をランダムな位置に追加する関数
+        function addEmojiBody(emojiText) {
+            // 絵文字のサイズをランダムにする
+            const emojiSize = Math.random() * (40 - 20) + 20; // 20px から 40px
+
+            var emojiBody = Bodies.circle(
+                Matter.Common.random(50, ENGINE_WIDTH - 50), // キャンバス上部のランダムなX座標
+                50, // Y座標（上から降ってくる）
+                emojiSize / 2, // 半径 (circleの場合)
+                {
+                    restitution: 0.3, // 反発係数 (跳ね返り具合)
+                    friction: 0.5, // 摩擦係数 (滑りやすさ)
+                    render: {
+                        sprite: {
+                            texture: '', // 絵文字を画像として使う場合はここにURLを設定
+                            xScale: emojiSize / 64, // デフォルトのspriteサイズに合わせて調整
+                            yScale: emojiSize / 64
+                        },
+                        // テキストとして描画する場合は以下を使用
+                        fillStyle: 'transparent', // Matter.js自体の色を透明に
+                        text: {
+                            text: emojiText,
+                            color: '#000',
+                            size: emojiSize
+                        }
+                    }
+                }
+            );
+            Composite.add(engine.world, emojiBody);
+        }
+
+        // Apps Script APIからデータを取得し、絵文字を生成する
+        async function fetchAndRenderEmojis() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+
+                const infoDiv = document.getElementById('info');
+                if (data.error) {
+                    infoDiv.textContent = `エラー: ${data.error}`;
+                    console.error('APIエラー:', data.error);
+                    return;
+                }
+
+                if (!data.data || data.data.length === 0) {
+                    infoDiv.textContent = 'まだ絵文字リアクションがありません。';
+                    return;
+                }
+
+                // 絵文字の種類と数を集計
+                const emojiCounts = {};
+                data.data.forEach(item => {
+                    const emoji = item.Emoji;
+                    emojiCounts[emoji] = (emojiCounts[emoji] || 0) + 1;
+                });
+
+                // 各絵文字を合計数分だけ生成
+                let totalEmojisAdded = 0;
+                for (const emoji in emojiCounts) {
+                    for (let i = 0; i < emojiCounts[emoji]; i++) {
+                        // 少し遅延を入れて順番に落とす
+                        setTimeout(() => {
+                            addEmojiBody(emoji);
+                        }, totalEmojisAdded * 50); // 50msごとに絵文字を落とす
+                        totalEmojisAdded++;
+                    }
+                }
+                infoDiv.textContent = `合計 ${totalEmojisAdded} 個の絵文字が降ってきました！`;
+
+            } catch (error) {
+                const infoDiv = document.getElementById('info');
+                infoDiv.textContent = 'データの取得に失敗しました。コンソールを確認してください。';
+                console.error('データ取得エラー:', error);
+            }
+        }
+
+        // ページ読み込み時に実行
+        fetchAndRenderEmojis();
+
+        // 任意：定期的にデータを更新したい場合（負荷に注意）
+        // setInterval(fetchAndRenderEmojis, 60000); // 1分ごとに更新（テスト用、本番では慎重に）
+
+    </script>
+</body>
+</html>

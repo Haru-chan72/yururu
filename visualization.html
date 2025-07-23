@@ -7,8 +7,8 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden; /* スクロールバーを非表示にする */
-            background-color: #f0f0f0; /* 背景色 */
+            overflow: hidden;
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -16,8 +16,8 @@
             min-height: 100vh;
         }
         canvas {
-            border: 1px solid #ccc; /* キャンバスの境界線 */
-            background-color: #fff; /* キャンバスの背景 */
+            border: 1px solid #ccc;
+            background-color: #fff;
         }
         #info {
             position: absolute;
@@ -35,18 +35,19 @@
     <div id="info">絵文字読み込み中...</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
     <script>
-        // ★★★ ここにJavaScriptコードを記述します ★★★
-        // 以下のコードは、このHTMLファイルの<body>タグ内にある<script>タグ内に直接記述してください。
-        // もしくは、別のJSファイル (例: visualization.js) に記述し、ここに読み込むように設定してください。
-        // <script src="visualization.js">
-        // この場合は、visualization.js をGitHubリポジトリにアップロードする必要があります。
-        // 今回はシンプルにHTML内に直接書く形で進めます。
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyPUFN0slw8c8N99Bk1N_HKYeEwDsWa9ZK_NGx7548934QJxo8uZ-hIg9UuJjtNiMx03g/exec';
+        const ENGINE_HEIGHT = 600;
+        const ENGINE_WIDTH = 800;
 
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyPUFN0slw8c8N99Bk1N_HKYeEwDsWa9ZK_NGx7548934QJxo8uZ-hIg9UuJjtNiMx03g/exec'; // ★★★ ここに先ほど取得したApps Script APIのURLを貼り付けます ★★★
-        const ENGINE_HEIGHT = 600; // キャンバスの高さ
-        const ENGINE_WIDTH = 800; // キャンバスの幅
+        // ★★★ ここに絵文字と画像URLのマップを追加 ★★★
+        const emojiImageMap = {
+            '💖': 'images/1f496.png', // ★要修正: あなたのファイルパスに合わせる★
+            '✨': 'images/2728.png', // ★要修正: あなたのファイルパスに合わせる★
+            '😊': 'images/263a.png',   // もしあれば追加
+            '🥰': 'images/1f970.png',     // もしあれば追加
+            // 他の絵文字もここに追加
+        };
 
-        // Matter.js の初期化
         var Engine = Matter.Engine,
             Render = Matter.Render,
             Runner = Matter.Runner,
@@ -54,69 +55,73 @@
             Composite = Matter.Composite,
             Events = Matter.Events;
 
-        // エンジンを作成
         var engine = Engine.create();
-        engine.world.gravity.y = 1; // 重力を設定 (デフォルトは1、強めにするなら2など)
+        engine.world.gravity.y = 1;
 
-        // レンダラーを作成
         var render = Render.create({
             element: document.body,
             engine: engine,
             options: {
                 width: ENGINE_WIDTH,
                 height: ENGINE_HEIGHT,
-                wireframes: false, // ワイヤーフレーム表示をオフにして、色付きで表示
-                background: '#fff' // キャンバスの背景色
+                wireframes: false,
+                background: '#fff'
             }
         });
 
         Render.run(render);
 
-        // ランナーを作成
         var runner = Runner.create();
         Runner.run(runner, engine);
 
-        // 地面と壁を作成
         var ground = Bodies.rectangle(ENGINE_WIDTH / 2, ENGINE_HEIGHT - 25, ENGINE_WIDTH, 50, { isStatic: true, render: { fillStyle: '#666' } });
         var leftWall = Bodies.rectangle(25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
         var rightWall = Bodies.rectangle(ENGINE_WIDTH - 25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
 
         Composite.add(engine.world, [ground, leftWall, rightWall]);
 
-// 絵文字をランダムな位置に追加する関数
-function addEmojiBody(emojiText) {
-    // 絵文字のサイズをランダムにする
-    const emojiSize = Math.random() * (40 - 20) + 20; // 20px から 40px
+        // 絵文字をランダムな位置に追加する関数
+        function addEmojiBody(emojiText) {
+            const emojiSize = Math.random() * (40 - 20) + 20;
+            const imageUrl = emojiImageMap[emojiText]; // 絵文字に対応する画像URLを取得
 
-    var emojiBody = Bodies.circle(
-        Matter.Common.random(50, ENGINE_WIDTH - 50), // キャンバス上部のランダムなX座標
-        50, // Y座標（上から降ってくる）
-        emojiSize / 2, // 半径 (circleの場合)
-        {
-            restitution: 0.3, // 反発係数 (跳ね返り具合)
-            friction: 0.5, // 摩擦係数 (滑りやすさ)
-            render: {
-                // ここを一時的にコメントアウト！
-                // sprite: {
-                //     texture: '',
-                //     xScale: emojiSize / 64,
-                //     yScale: emojiSize / 64
-                // },
-                // text: {
-                //     text: emojiText,
-                //     color: '#000',
-                //     size: emojiSize
-                // },
-
-                // ★★★ この一行を追加して、赤い円が表示されるか確認 ★★★
-                fillStyle: '#FF0000' // 赤色で塗りつぶす
+            if (!imageUrl) {
+                console.warn(`Warning: Image not found for emoji: ${emojiText}. Falling back to red circle.`);
+                // 画像が見つからない場合は赤い円を表示（デバッグ用）
+                var emojiBody = Bodies.circle(
+                    Matter.Common.random(50, ENGINE_WIDTH - 50),
+                    50,
+                    emojiSize / 2,
+                    {
+                        restitution: 0.3,
+                        friction: 0.5,
+                        render: {
+                            fillStyle: '#FF0000'
+                        }
+                    }
+                );
+            } else {
+                // 画像として描画
+                var emojiBody = Bodies.circle(
+                    Matter.Common.random(50, ENGINE_WIDTH - 50),
+                    50,
+                    emojiSize / 2, // 半径 (circleの場合、画像に合わせて調整が必要になることも)
+                    {
+                        restitution: 0.3,
+                        friction: 0.5,
+                        render: {
+                            sprite: {
+                                texture: imageUrl, // ★★★ ここに画像URLを設定 ★★★
+                                xScale: emojiSize / 64, // 画像の元のサイズ（例: 64px）に合わせて調整
+                                yScale: emojiSize / 64
+                            }
+                        }
+                    }
+                );
             }
+            Composite.add(engine.world, emojiBody);
         }
-    );
-    Composite.add(engine.world, emojiBody);
-}
 
-        // Apps Script APIからデータを取得し、絵文字を生成する
         async function fetchAndRenderEmojis() {
             try {
                 const response = await fetch(API_URL);
@@ -134,21 +139,18 @@ function addEmojiBody(emojiText) {
                     return;
                 }
 
-                // 絵文字の種類と数を集計
                 const emojiCounts = {};
                 data.data.forEach(item => {
                     const emoji = item.Emoji;
                     emojiCounts[emoji] = (emojiCounts[emoji] || 0) + 1;
                 });
 
-                // 各絵文字を合計数分だけ生成
                 let totalEmojisAdded = 0;
                 for (const emoji in emojiCounts) {
                     for (let i = 0; i < emojiCounts[emoji]; i++) {
-                        // 少し遅延を入れて順番に落とす
                         setTimeout(() => {
                             addEmojiBody(emoji);
-                        }, totalEmojisAdded * 50); // 50msごとに絵文字を落とす
+                        }, totalEmojisAdded * 50);
                         totalEmojisAdded++;
                     }
                 }
@@ -161,12 +163,8 @@ function addEmojiBody(emojiText) {
             }
         }
 
-        // ページ読み込み時に実行
         fetchAndRenderEmojis();
-
-        // 任意：定期的にデータを更新したい場合（負荷に注意）
-        // setInterval(fetchAndRenderEmojis, 60000); // 1分ごとに更新（テスト用、本番では慎重に）
-
+        // setInterval(fetchAndRenderEmojis, 60000);
     </script>
 </body>
 </html>

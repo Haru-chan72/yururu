@@ -1,0 +1,207 @@
+@font-face {
+    font-family: "title";
+    src: url(font/kakumarukko_ts-Bold.ttf) format(truetype);
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+    overflow-x: hidden; /* 横スクロールバーが出ないように */
+}
+
+.header {
+    font-family: title,sans-serif;
+    text-align: center;
+    padding: 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+h1 {
+    color: #555;
+    margin-bottom: 0;
+}
+
+/* サイト説明セクションのスタイル */
+.site-description-container {
+    padding: 30px;
+    margin: 20px auto; /* ギャラリーと共通の中央寄せ */
+    max-width: 1200px; /* ギャラリーと幅を合わせる */
+    border-radius: 10px;
+    text-align: center; /* 説明文全体を中央寄せ */
+}
+
+.site-description-content h2 {
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.site-description-content p {
+    color: #444;
+    font-size: 1.05rem;
+    max-width: 800px; /* 長文になりすぎないように最大幅を設定 */
+    margin: 0 auto 10px auto; /* 中央寄せと段落間の余白 */
+}
+
+.site-description-content p:last-child {
+    margin-bottom: 0;
+}
+
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 30px;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.illustration-item {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.illustration-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.illustration-item img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.description-section {
+    padding: 15px;
+    border-top: 1px solid #eee;
+}
+
+.toggle-description-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: transparent;
+    color: #888;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: normal;
+    text-align: center;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.toggle-description-button:hover {
+    background-color: #f0f0f0;
+    color: #555;
+    border-color: #bbb;
+}
+
+.description-content {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+.description-content p {
+    margin-bottom: 8px;
+}
+
+.description-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* 絵文字リアクションコンテナのスタイル */
+.emoji-reaction-container {
+    display: flex; /* ボタンを横並びにする */
+    justify-content: center; /* 中央揃え */
+    gap: 8px; /* ボタン間のスペース */
+    padding: 10px 15px 0 15px; /* 上部に余白、左右はアイテムのpaddingと合わせる */
+    border-top: 1px solid #eee; /* 説明セクションとの区切り */
+    margin-top: 15px; /* 説明セクションとの間隔 */
+}
+
+.emoji-button {
+    background-color: transparent; /* 背景透明 */
+    border: 1px solid #e0e0e0; /* 薄い枠線 */
+    border-radius: 5px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 1.2rem; /* 絵文字のサイズ */
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    line-height: 1; /* 絵文字の垂直方向のズレを調整 */
+}
+
+.emoji-button:hover {
+    background-color: #f0f0f0; /* ホバーで少し背景色 */
+    border-color: #c0c0c0; /* ホバーで少し濃い枠線 */
+    transform: translateY(-2px); /* 少し上に浮き上がる効果 */
+}
+
+.emoji-button:active {
+    background-color: #e0e0e0; /* クリック時にさらに濃く */
+    transform: translateY(0); /* クリック時は元に戻す */
+}
+
+.character-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    z-index: 1000;
+}
+
+#character-image {
+    width: 150px;
+    height: auto;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .site-description-container {
+        padding: 20px;
+        margin: 15px auto;
+    }
+    .site-description-content h2 {
+        font-size: 1.5rem;
+    }
+    .site-description-content p {
+        font-size: 0.95rem;
+    }
+
+    .gallery {
+        grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 20px;
+    }
+
+    .character-container {
+        bottom: 10px;
+        right: 10px;
+    }
+
+    #character-image {
+        width: 100px;
+    }
+}

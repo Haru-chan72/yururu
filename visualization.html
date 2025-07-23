@@ -7,8 +7,8 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            background-color: #f0f0f0;
+            overflow: hidden; /* スクロールバーを非表示にする */
+            background-color: #f0f0f0; /* 背景色 */
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -16,8 +16,12 @@
             min-height: 100vh;
         }
         canvas {
-            border: 1px solid #ccc;
-            background-color: #fff;
+            border: 1px solid #ccc; /* キャンバスの境界線 */
+            background-color: #fff; /* キャンバスの背景 */
+            /* ★★★ 追加/修正するCSS ★★★ */
+            max-width: 100%; /* 親要素の幅を超えないようにする */
+            height: auto;    /* 幅に合わせて高さを自動調整 */
+            display: block;  /* 中央寄せのため */
         }
         #info {
             position: absolute;
@@ -35,19 +39,13 @@
     <div id="info">絵文字読み込み中...</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyPUFN0slw8c8N99Bk1N_HKYeEwDsWa9ZK_NGx7548934QJxo8uZ-hIg9UuJjtNiMx03g/exec';
-        const ENGINE_HEIGHT = 600;
-        const ENGINE_WIDTH = 800;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyPUFN0slw8c8N99Bk1N_HKYeEwDsWa9ZK_NGx7548934QJxo8uZ-hIg9UuJjtNiMx03g/exec'; // あなたのApps Script APIのURL
 
-        // ★★★ ここに絵文字と画像URLのマップを追加 ★★★
-        const emojiImageMap = {
-            '💖': 'images/1f496.png', // ★要修正: あなたのファイルパスに合わせる★
-            '✨': 'images/2728.png', // ★要修正: あなたのファイルパスに合わせる★
-            '😊': 'images/263a.png',   // もしあれば追加
-            '🥰': 'images/1f970.png',     // もしあれば追加
-            // 他の絵文字もここに追加
-        };
+        // 初期設定のCanvasサイズ (PC表示の基準とする)
+        const INITIAL_ENGINE_WIDTH = 800;
+        const INITIAL_ENGINE_HEIGHT = 600;
 
+        // Matter.js の初期化
         var Engine = Matter.Engine,
             Render = Matter.Render,
             Runner = Matter.Runner,
@@ -62,8 +60,8 @@
             element: document.body,
             engine: engine,
             options: {
-                width: ENGINE_WIDTH,
-                height: ENGINE_HEIGHT,
+                width: INITIAL_ENGINE_WIDTH, // 初期値を設定
+                height: INITIAL_ENGINE_HEIGHT, // 初期値を設定
                 wireframes: false,
                 background: '#fff'
             }
@@ -74,22 +72,51 @@
         var runner = Runner.create();
         Runner.run(runner, engine);
 
-        var ground = Bodies.rectangle(ENGINE_WIDTH / 2, ENGINE_HEIGHT - 25, ENGINE_WIDTH, 50, { isStatic: true, render: { fillStyle: '#666' } });
-        var leftWall = Bodies.rectangle(25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
-        var rightWall = Bodies.rectangle(ENGINE_WIDTH - 25, ENGINE_HEIGHT / 2, 50, ENGINE_HEIGHT, { isStatic: true, render: { fillStyle: '#666' } });
+        // 地面と壁を作成 (これらの位置も動的に調整する必要がある)
+        // まずは既存の要素をクリア
+        Composite.clear(engine.world);
 
-        Composite.add(engine.world, [ground, leftWall, rightWall]);
+        // ★★★ Canvasサイズに合わせて地面と壁を再構築する関数 ★★★
+        function setupBoundaries() {
+            // 既存の境界を削除 (リサイズ時に重複しないように)
+            Composite.remove(engine.world, engine.world.bodies.filter(body => body.isStatic));
 
-        // 絵文字をランダムな位置に追加する関数
+            const currentWidth = render.options.width;
+            const currentHeight = render.options.height;
+
+            var ground = Bodies.rectangle(currentWidth / 2, currentHeight - 25, currentWidth, 50, { isStatic: true, render: { fillStyle: '#666' } });
+            var leftWall = Bodies.rectangle(25, currentHeight / 2, 50, currentHeight, { isStatic: true, render: { fillStyle: '#666' } });
+            var rightWall = Bodies.rectangle(currentWidth - 25, currentHeight / 2, 50, currentHeight, { isStatic: true, render: { fillStyle: '#666' } });
+
+            Composite.add(engine.world, [ground, leftWall, rightWall]);
+        }
+
+        // 初期ロード時に境界を設定
+        setupBoundaries();
+
+
+        // 絵文字と画像URLのマップ（以前のあなたの設定）
+        const emojiImageMap = {
+
+            '💖': 'images/1f496.png', // ★要修正: あなたのファイルパスに合わせる★
+            '✨': 'images/2728.png', // ★要修正: あなたのファイルパスに合わせる★
+            '😊': 'images/263a.png',  // もしあれば追加
+            '🥰': 'images/1f970.png',  // もしあれば追加
+            // 他の絵文字もここに追加
+        };
+
         function addEmojiBody(emojiText) {
-            const emojiSize = Math.random() * (40 - 20) + 20;
-            const imageUrl = emojiImageMap[emojiText]; // 絵文字に対応する画像URLを取得
+            // 絵文字のサイズを動的に調整
+            const currentWidth = render.options.width;
+            const emojiSize = Math.random() * (currentWidth / 20 - currentWidth / 40) + currentWidth / 40; // 画面幅に合わせたサイズ調整
 
+            const imageUrl = emojiImageMap[emojiText];
+
+            let emojiBody;
             if (!imageUrl) {
                 console.warn(`Warning: Image not found for emoji: ${emojiText}. Falling back to red circle.`);
-                // 画像が見つからない場合は赤い円を表示（デバッグ用）
-                var emojiBody = Bodies.circle(
-                    Matter.Common.random(50, ENGINE_WIDTH - 50),
+                emojiBody = Bodies.circle(
+                    Matter.Common.random(50, currentWidth - 50),
                     50,
                     emojiSize / 2,
                     {
@@ -101,18 +128,17 @@
                     }
                 );
             } else {
-                // 画像として描画
-                var emojiBody = Bodies.circle(
-                    Matter.Common.random(50, ENGINE_WIDTH - 50),
+                emojiBody = Bodies.circle(
+                    Matter.Common.random(50, currentWidth - 50),
                     50,
-                    emojiSize / 2, // 半径 (circleの場合、画像に合わせて調整が必要になることも)
+                    emojiSize / 2,
                     {
                         restitution: 0.3,
                         friction: 0.5,
                         render: {
                             sprite: {
-                                texture: imageUrl, // ★★★ ここに画像URLを設定 ★★★
-                                xScale: emojiSize / 64, // 画像の元のサイズ（例: 64px）に合わせて調整
+                                texture: imageUrl,
+                                xScale: emojiSize / 64, // 元画像のサイズ64pxを基準に調整
                                 yScale: emojiSize / 64
                             }
                         }
@@ -163,8 +189,63 @@
             }
         }
 
+        // ページ読み込み時に実行
         fetchAndRenderEmojis();
-        // setInterval(fetchAndRenderEmojis, 60000);
+
+        // ★★★ ウィンドウのリサイズイベントを監視してCanvasを調整 ★★★
+        function resizeCanvas() {
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+
+            // Canvasの新しいサイズを計算（アスペクト比を維持しつつ、画面に収まるように）
+            let newWidth, newHeight;
+            const aspectRatio = INITIAL_ENGINE_WIDTH / INITIAL_ENGINE_HEIGHT;
+
+            if (containerWidth / containerHeight > aspectRatio) {
+                // 画面が横長すぎるときは高さを基準にする
+                newHeight = containerHeight;
+                newWidth = containerHeight * aspectRatio;
+            } else {
+                // 画面が縦長すぎるときは幅を基準にする
+                newWidth = containerWidth;
+                newHeight = containerWidth / aspectRatio;
+            }
+
+            // 必要に応じて最大サイズを制限
+            newWidth = Math.min(newWidth, INITIAL_ENGINE_WIDTH);
+            newHeight = Math.min(newHeight, INITIAL_ENGINE_HEIGHT);
+
+            // Matter.js のレンダラーのサイズを更新
+            render.options.width = newWidth;
+            render.options.height = newHeight;
+            render.canvas.width = newWidth;
+            render.canvas.height = newHeight;
+
+            // 境界を再設定
+            setupBoundaries();
+
+            // 必要であれば既存のボディの位置も調整するロジックを追加 (今回は省略)
+            // Composite.allBodies(engine.world).forEach(body => {
+            //     // 各ボディのx, y座標を新しいCanvasサイズに合わせて調整
+            //     // 画面中央に相対的に配置するなど
+            // });
+
+            Render.setViewPort(render, { // 正しい関数名は Render.setViewPort()
+                x: 0,
+                y: 0,
+                width: newWidth,
+                height: newHeight
+            });
+
+            // 物理エンジンの重力も調整できるが、今回は固定
+            // engine.world.gravity.x = 0;
+            // engine.world.gravity.y = 1;
+        }
+
+        // ページロード時とリサイズ時にCanvasサイズを設定
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // 初回ロード時にも実行
+
     </script>
 </body>
 </html>

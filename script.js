@@ -18,37 +18,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 絵文字リアクション機能
     const emojiButtons = document.querySelectorAll('.emoji-button');
-    // ★★★ ここにApps ScriptのウェブアプリURLを貼り付けてください ★★★
-    const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_ZstVQ3tub2MD-Si65aKNH9yFsFdxphwvXgkCHGesnLDVPrycS3kXEivCHGtstj9X3Q/exec'
+    const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_ZstVQ3tub2MD-Si65aKNH9yFsFdxphwvXgkCHGesnLDVPrycS3kXEivCHGtstj9X3Q/exec';
+
     emojiButtons.forEach(button => {
-        button.addEventListener('click', async () => {
+        button.addEventListener('click', async (event) => { // ★イベントオブジェクト(event)を受け取るように修正★
             // 親のイラストアイテムからIDを取得
             const illustrationItem = button.closest('.illustration-item');
             const illustrationId = illustrationItem ? illustrationItem.dataset.illustrationId : 'unknown';
             const emoji = button.dataset.emoji; // クリックされた絵文字を取得
 
+            // ★ここからパーティクルエフェクトの追加★
+            createEmojiParticle(emoji, event.clientX, event.clientY);
+            // ★ここまでパーティクルエフェクトの追加★
+
             try {
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // CORSエラーを避けるため、no-corsモードにする
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         illustrationId: illustrationId,
-                        emoji: emoji // 絵文字データを送信
+                        emoji: emoji
                     }),
                 });
 
-                // no-corsモードでは、レスポンスの内容をJavaScriptで読み取ることができません。
-                // 成功したかどうかは、ネットワークタブでリクエストが200 OKになっているかで確認します。
                 console.log(`絵文字リアクションが記録されました: ${illustrationId} - ${emoji}`);
-                // 必要であれば、ここに一時的な視覚フィードバック（例: 絵文字が短く光る）を追加できます。
 
             } catch (error) {
                 console.error('絵文字リアクションの送信中にエラーが発生しました:', error);
-                // alert('絵文字リアクションの送信に失敗しました。時間をおいて再度お試しください。'); // 失敗時アラートはUXを損なう場合があるので、コメントアウト推奨
             }
         });
     });
+
+    // ★★★ ここから新しい関数を追加 ★★★
+    function createEmojiParticle(emojiText, startX, startY) {
+        const particle = document.createElement('div');
+        particle.textContent = emojiText;
+        particle.style.position = 'fixed'; // 画面上に固定表示
+        particle.style.left = `${startX}px`;
+        particle.style.top = `${startY}px`;
+        particle.style.fontSize = '1em'; // 絵文字の大きさ
+        particle.style.pointerEvents = 'none'; // クリックが透過するようにする
+        particle.style.opacity = '1'; // 最初は不透明
+        particle.style.transform = 'translate(-50%, -50%)'; // 中心を基準に配置
+        particle.style.transition = 'opacity 1.5s ease-out, transform 1.5s ease-out'; // アニメーションの速度
+        particle.style.zIndex = '9999'; // 他の要素の上に表示
+
+        document.body.appendChild(particle);
+
+        // 少し遅延させてからアニメーションを開始
+        // これにより、transitionが適用される前に初期位置が設定される
+        setTimeout(() => {
+            const randomOffsetX = (Math.random() - 0.5) * 30; // -25px から 25px の範囲で横にずらす
+            const randomOffsetY = Math.random() * 10 + 45; // 50px から 130px の範囲で上に移動
+
+            particle.style.opacity = '0'; // 徐々に透明に
+            particle.style.transform = `translate(${randomOffsetX}px, -${randomOffsetY}px) scale(1.2)`; // 上に移動し、少し拡大
+        }, 10); // 10msのわずかな遅延
+
+        // アニメーション終了後に要素を削除
+        particle.addEventListener('transitionend', () => {
+            particle.remove();
+        });
+    }
+    // ★★★ ここまで新しい関数を追加 ★★★
 });

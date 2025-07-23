@@ -83,36 +83,38 @@
 
         Composite.add(engine.world, [ground, leftWall, rightWall]);
 
-        // 絵文字をランダムな位置に追加する関数
-        function addEmojiBody(emojiText) {
-            // 絵文字のサイズをランダムにする
-            const emojiSize = Math.random() * (40 - 20) + 20; // 20px から 40px
+// 絵文字をランダムな位置に追加する関数
+function addEmojiBody(emojiText) {
+    // 絵文字のサイズをランダムにする
+    const emojiSize = Math.random() * (40 - 20) + 20; // 20px から 40px
 
-            var emojiBody = Bodies.circle(
-                Matter.Common.random(50, ENGINE_WIDTH - 50), // キャンバス上部のランダムなX座標
-                50, // Y座標（上から降ってくる）
-                emojiSize / 2, // 半径 (circleの場合)
-                {
-                    restitution: 0.3, // 反発係数 (跳ね返り具合)
-                    friction: 0.5, // 摩擦係数 (滑りやすさ)
-                    render: {
-                        sprite: {
-                            texture: '', // 絵文字を画像として使う場合はここにURLを設定
-                            xScale: emojiSize / 64, // デフォルトのspriteサイズに合わせて調整
-                            yScale: emojiSize / 64
-                        },
-                        // テキストとして描画する場合は以下を使用
-                        fillStyle: 'transparent', // Matter.js自体の色を透明に
-                        text: {
-                            text: emojiText,
-                            color: '#000',
-                            size: emojiSize
-                        }
-                    }
-                }
-            );
-            Composite.add(engine.world, emojiBody);
+    var emojiBody = Bodies.circle(
+        Matter.Common.random(50, ENGINE_WIDTH - 50), // キャンバス上部のランダムなX座標
+        50, // Y座標（上から降ってくる）
+        emojiSize / 2, // 半径 (circleの場合)
+        {
+            restitution: 0.3, // 反発係数 (跳ね返り具合)
+            friction: 0.5, // 摩擦係数 (滑りやすさ)
+            render: {
+                // ここを一時的にコメントアウト！
+                // sprite: {
+                //     texture: '',
+                //     xScale: emojiSize / 64,
+                //     yScale: emojiSize / 64
+                // },
+                // text: {
+                //     text: emojiText,
+                //     color: '#000',
+                //     size: emojiSize
+                // },
+
+                // ★★★ この一行を追加して、赤い円が表示されるか確認 ★★★
+                fillStyle: '#FF0000' // 赤色で塗りつぶす
+            }
         }
+    );
+    Composite.add(engine.world, emojiBody);
+}
 
         // Apps Script APIからデータを取得し、絵文字を生成する
         async function fetchAndRenderEmojis() {
